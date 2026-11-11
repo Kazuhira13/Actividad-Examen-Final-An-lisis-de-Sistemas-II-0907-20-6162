@@ -64,12 +64,82 @@ public class ClientesApiTests
             response.StatusCode);
     }
 
+    // EXAMEN FINAL - PRUEBA API 200 OK
+    [Fact]
+    public async Task ObtenerPorId_ClienteExistente_DebeRetornar200()
+    {
+        // Arrange: preparar la API y el cliente HTTP
+        using var factory = new ClienteApiFactory();
+        using var client = factory.CreateClient();
+
+        // Registrar primero un cliente para consultarlo
+        var solicitud = new
+        {
+            Nombre = "Carlos Pérez",
+            Correo = $"carlos_{Guid.NewGuid():N}@example.com"
+        };
+
+        var registro = await client.PostAsJsonAsync(
+            "/api/Clientes",
+            solicitud);
+
+        // Comprobar que el cliente fue creado correctamente
+        Assert.Equal(
+            HttpStatusCode.Created,
+            registro.StatusCode);
+
+        var clienteRegistrado = await registro.Content
+            .ReadFromJsonAsync<ClienteRespuesta>();
+
+        Assert.NotNull(clienteRegistrado);
+
+        // Act: consultar el cliente existente mediante HttpClient
+        var response = await client.GetAsync(
+            $"/api/Clientes/{clienteRegistrado.Id}");
+
+        // Assert: comprobar que la API devuelve 200 OK
+        Assert.Equal(
+            HttpStatusCode.OK,
+            response.StatusCode);
+
+        // Comprobar también los datos del cliente obtenido
+        var clienteObtenido = await response.Content
+            .ReadFromJsonAsync<ClienteRespuesta>();
+
+        Assert.NotNull(clienteObtenido);
+        Assert.Equal(clienteRegistrado.Id, clienteObtenido.Id);
+        Assert.Equal(solicitud.Nombre, clienteObtenido.Nombre);
+        Assert.Equal(solicitud.Correo, clienteObtenido.Correo);
+    }
+
+    // EXAMEN FINAL - PRUEBA API 404 NOT FOUND
+    [Fact]
+    public async Task ObtenerPorId_ClienteInexistente_DebeRetornar404()
+    {
+        // Arrange: preparar la API y el cliente HTTP
+        using var factory = new ClienteApiFactory();
+        using var client = factory.CreateClient();
+
+        // Identificador inexistente en la base de datos
+        int idInexistente = 9999;
+
+        // Act: consultar el cliente inexistente
+        var response = await client.GetAsync(
+            $"/api/Clientes/{idInexistente}");
+
+        // Assert: comprobar que la API devuelve 404 Not Found
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            response.StatusCode);
+    }
+
     private sealed record ClienteRespuesta(
         int Id,
         string Nombre,
         string Correo);
 }
 
+// Configuración de la API para las pruebas automatizadas
 public sealed class ClienteApiFactory : WebApplicationFactory<Program>
 {
     private readonly string _dbPath = Path.Combine(

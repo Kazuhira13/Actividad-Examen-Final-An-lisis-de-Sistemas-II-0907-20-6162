@@ -13,7 +13,7 @@ public class ClienteRepositoryTests : IDisposable
 
     public ClienteRepositoryTests()
     {
-        // Crear una base de datos exclusiva para esta prueba.
+        // Crear una base de datos exclusiva para cada prueba.
         _dbPath = Path.Combine(
             Path.GetTempPath(),
             $"clientes_test_{Guid.NewGuid():N}.db");
@@ -71,9 +71,26 @@ public class ClienteRepositoryTests : IDisposable
             excepcion.Message);
     }
 
+    // EXAMEN FINAL - PRUEBA DE INTEGRACIÓN CON SQLITE
+    [Fact]
+    public void ObtenerPorId_ClienteInexistente_DebeRetornarNull()
+    {
+        // Arrange: utilizar el servicio con el repositorio real.
+        var service = new ClienteService(_repository);
+
+        // Identificador que no existe en la base de datos.
+        int idInexistente = 9999;
+
+        // Act: consultar el cliente mediante el servicio.
+        var resultado = service.ObtenerPorId(idInexistente);
+
+        // Assert: comprobar que el resultado es nulo.
+        Assert.Null(resultado);
+    }
 
     public void Dispose()
     {
+        // Eliminar la base de datos temporal al finalizar.
         if (File.Exists(_dbPath))
         {
             File.Delete(_dbPath);

@@ -1,4 +1,5 @@
-﻿using ClienteApp.Core.Models;
+﻿
+using ClienteApp.Core.Models;
 using ClienteApp.Core.Repositories;
 using ClienteApp.Core.Services;
 using Moq;
@@ -61,12 +62,13 @@ public class ClienteServiceTests
         Assert.Equal(esperado, resultado);
     }
 
-
     [Fact]
     public void Registrar_DatosValidos_DebeRegistrarCliente()
     {
         // Arrange: preparar el escenario
-        _repositoryMock.Setup(r => r.ExisteCorreo("ana@example.com")).Returns(false);
+        _repositoryMock
+            .Setup(r => r.ExisteCorreo("ana@example.com"))
+            .Returns(false);
 
         var nombre = " Ana López ";
         var correo = "ana@example.com";
@@ -85,7 +87,6 @@ public class ClienteServiceTests
                 c.Correo == correo)),
             Times.Once);
     }
-
 
     [Fact]
     public void Registrar_NombreVacio_DebeLanzarExcepcion()
@@ -130,5 +131,35 @@ public class ClienteServiceTests
             Times.Never);
     }
 
+    // EXAMEN FINAL - PRUEBA UNITARIA CON MOQ
+    [Fact]
+    public void ObtenerPorId_ClienteExistente_DebeRetornarClienteEsperado()
+    {
+        // Arrange: preparar el cliente esperado
+        var clienteEsperado = new Cliente
+        {
+            Id = 1,
+            Nombre = "Ana López",
+            Correo = "ana@example.com"
+        };
 
+        // Configurar el repositorio simulado con Moq
+        _repositoryMock
+            .Setup(r => r.ObtenerPorId(1))
+            .Returns(clienteEsperado);
+
+        // Act: consultar el cliente mediante el servicio
+        var resultado = _service.ObtenerPorId(1);
+
+        // Assert: comprobar que el cliente es el esperado
+        Assert.NotNull(resultado);
+        Assert.Equal(clienteEsperado.Id, resultado.Id);
+        Assert.Equal(clienteEsperado.Nombre, resultado.Nombre);
+        Assert.Equal(clienteEsperado.Correo, resultado.Correo);
+
+        // Verificar que el repositorio se consultó una sola vez
+        _repositoryMock.Verify(
+            r => r.ObtenerPorId(1),
+            Times.Once);
+    }
 }
